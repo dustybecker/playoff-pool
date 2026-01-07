@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* keep body simple until config is confirmed */
+body {
+  background-color: #0F172A;
+  color: #E5E7EB;
+}

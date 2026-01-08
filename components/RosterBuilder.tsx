@@ -1,14 +1,64 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Player, Team } from "../lib/playoffData";
-import { playoffTeams, playersByTeam } from "../lib/playoffData";
-
-
 
 type Filter = "ALL" | "AFC" | "NFC";
+type Conference = "AFC" | "NFC";
+type Pos = "QB" | "RB" | "WR" | "TE";
 
-type SelectionMap = Record<string, Player | undefined>; // key = teamId
+type Team = {
+  team_id: string;
+  team_name: string;
+  team_abbr: string | null;
+  conference: Conference | null;
+  division: string | null;
+  is_playoff?: boolean | null;
+};
+
+type Player = {
+  player_id: string;
+  player_name: string;
+  pos: Pos;
+  team_id: string;
+  team_abbr: string | null;
+  conference: Conference | null;
+};
+
+type SlotBase = "QB" | "RB" | "WR" | "TE" | "FLEX1" | "FLEX2" | "SFLEX";
+type SlotId = `${Conference}_${SlotBase}`;
+
+type SlotDef = {
+  id: SlotId;
+  conference: Conference;
+  label: string;
+  allowed: Pos[];
+};
+
+const SLOTS: SlotDef[] = [
+  { id: "AFC_QB", conference: "AFC", label: "QB", allowed: ["QB"] },
+  { id: "AFC_RB", conference: "AFC", label: "RB", allowed: ["RB"] },
+  { id: "AFC_WR", conference: "AFC", label: "WR", allowed: ["WR"] },
+  { id: "AFC_TE", conference: "AFC", label: "TE", allowed: ["TE"] },
+  { id: "AFC_FLEX1", conference: "AFC", label: "FLEX", allowed: ["RB", "WR", "TE"] },
+  { id: "AFC_FLEX2", conference: "AFC", label: "FLEX", allowed: ["RB", "WR", "TE"] },
+  { id: "AFC_SFLEX", conference: "AFC", label: "SUPERFLEX", allowed: ["QB", "RB", "WR", "TE"] },
+
+  { id: "NFC_QB", conference: "NFC", label: "QB", allowed: ["QB"] },
+  { id: "NFC_RB", conference: "NFC", label: "RB", allowed: ["RB"] },
+  { id: "NFC_WR", conference: "NFC", label: "WR", allowed: ["WR"] },
+  { id: "NFC_TE", conference: "NFC", label: "TE", allowed: ["TE"] },
+  { id: "NFC_FLEX1", conference: "NFC", label: "FLEX", allowed: ["RB", "WR", "TE"] },
+  { id: "NFC_FLEX2", conference: "NFC", label: "FLEX", allowed: ["RB", "WR", "TE"] },
+  { id: "NFC_SFLEX", conference: "NFC", label: "SUPERFLEX", allowed: ["QB", "RB", "WR", "TE"] },
+];
+
+type SlotSelections = Record<SlotId, Player | null>;
+
+function createInitialSelections(): SlotSelections {
+  const init = {} as SlotSelections;
+  for (const s of SLOTS) init[s.id] = null;
+  return init;
+}
 
 function pillClass(active: boolean) {
   return [
@@ -17,42 +67,210 @@ function pillClass(active: boolean) {
   ].join(" ");
 }
 
-export default function RosterBuilder() {
+function slotTitle(slot: SlotDef) {
+  // Make FLEX labels clearer in the grid
+  if (slot.id.endsWith("FLEX1")) return "FLEX 1";
+  if (slot.id.endsWith("FLEX2")) return "FLEX 2";
+  if (slot.id.endsWith("SFLEX")) return "SUPERFLEX";
+  return slot.label;
+}
 
+export default function RosterBuilder() {
+  const poolId = "2026-playoffs";
 
   const [filter, setFilter] = useState<Filter>("ALL");
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [selections, setSelections] = useState<SelectionMap>({});
+
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+  const [teamsError, setTeamsError] = useState<string | null>(null);
+
+  const [allPlayers, setAllPlayers] = useState<Player[]>([]);
+  const [playersLoading, setPlayersLoading] = useState(true);
+  const [playersError, setPlayersError] = useState<string | null>(null);
+
+  const [selections, setSelections] = useState<SlotSelections>(() => createInitialSelections());
   const [locked, setLocked] = useState(false);
+  const [lockedAt, setLockedAt] = useState<string | null>(null);
 
-  const teams: Team[] = useMemo(() => {
-    if (filter === "ALL") return playoffTeams;
-    return playoffTeams.filter((t) => t.conference === filter);
-  }, [filter]);
+  // Modal state
+  const [selectedSlotId, setSelectedSlotId] = useState<SlotId | null>(null);
+  const [selectedTeamIdInModal, setSelectedTeamIdInModal] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
-  const totalTeams = playoffTeams.length;
-  const selectedCount = Object.values(selections).filter(Boolean).length;
+  // Load teams once
+  useEffect(() => {
+    let cancelled = false;
 
-  const canReview = selectedCount > 0;
-  const canLock = selectedCount === totalTeams && !locked;
+    async function loadTeams() {
+      setTeamsLoading(true);
+      setTeamsError(null);
 
-  const selectedRoster = useMemo(() => {
-    return playoffTeams
-      .map((t) => ({
-        team: t,
-        player: selections[t.id],
-      }))
-      .filter((row) => row.player);
+      try {
+        const res = await fetch(`/api/teams?pool_id=${encodeURIComponent(poolId)}`);
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.error ?? "Failed to load teams");
+
+        if (!cancelled) setTeams(json.teams ?? []);
+      } catch (e: any) {
+        if (!cancelled) setTeamsError(e?.message ?? "Failed to load teams");
+      } finally {
+        if (!cancelled) setTeamsLoading(false);
+      }
+    }
+
+    loadTeams();
+    return () => {
+      cancelled = true;
+    };
+  }, [poolId]);
+
+  // Load all players once (simple and reliable; optimize later if desired)
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPlayers() {
+      setPlayersLoading(true);
+      setPlayersError(null);
+
+      try {
+        const res = await fetch(`/api/players?pool_id=${encodeURIComponent(poolId)}`);
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.error ?? "Failed to load players");
+
+        if (!cancelled) setAllPlayers(json.players ?? []);
+      } catch (e: any) {
+        if (!cancelled) setPlayersError(e?.message ?? "Failed to load players");
+      } finally {
+        if (!cancelled) setPlayersLoading(false);
+      }
+    }
+
+    loadPlayers();
+    return () => {
+      cancelled = true;
+    };
+  }, [poolId]);
+
+  const filledCount = useMemo(() => Object.values(selections).filter(Boolean).length, [selections]);
+  const totalSlots = SLOTS.length;
+
+  const canReview = filledCount > 0;
+  const canLock = filledCount === totalSlots && !locked;
+
+  const usedPlayerIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const p of Object.values(selections)) {
+      if (p?.player_id) ids.add(p.player_id);
+    }
+    return ids;
   }, [selections]);
 
-  const teamRow = (team: Team) => {
-    const chosen = selections[team.id];
+  const slotsAFC = useMemo(() => SLOTS.filter((s) => s.conference === "AFC"), []);
+  const slotsNFC = useMemo(() => SLOTS.filter((s) => s.conference === "NFC"), []);
+
+  const openSlot = (slotId: SlotId) => {
+    if (locked) return;
+    setSelectedSlotId(slotId);
+    setQuery("");
+
+    // If a player is already selected in this slot, default the team dropdown to that player's team
+    const existing = selections[slotId];
+    setSelectedTeamIdInModal(existing?.team_id ?? null);
+  };
+
+  const closeModal = () => {
+    setSelectedSlotId(null);
+    setSelectedTeamIdInModal(null);
+    setQuery("");
+  };
+
+  const clearSlot = (slotId: SlotId) => {
+    if (locked) return;
+    setSelections((prev) => ({ ...prev, [slotId]: null }));
+  };
+
+  const lockRoster = () => {
+    if (!canLock) return;
+    const now = new Date().toISOString();
+    setLocked(true);
+    setLockedAt(now);
+  };
+
+  const reviewText = locked ? "Roster Locked" : "Review Roster";
+
+  const selectedSlot = useMemo(() => {
+    if (!selectedSlotId) return null;
+    return SLOTS.find((s) => s.id === selectedSlotId) ?? null;
+  }, [selectedSlotId]);
+
+  const playoffTeamsByConference = useMemo(() => {
+    const afc = teams.filter((t) => t.conference === "AFC");
+    const nfc = teams.filter((t) => t.conference === "NFC");
+    return { afc, nfc };
+  }, [teams]);
+
+  const modalTeams = useMemo(() => {
+    if (!selectedSlot) return [];
+    const base = selectedSlot.conference === "AFC" ? playoffTeamsByConference.afc : playoffTeamsByConference.nfc;
+
+    // If filter is set to ALL we still only show conference-appropriate teams in the modal.
+    return base;
+  }, [selectedSlot, playoffTeamsByConference]);
+
+  const modalPlayers = useMemo(() => {
+    if (!selectedSlot || !selectedTeamIdInModal) return [];
+
+    const allowed = new Set<Pos>(selectedSlot.allowed);
+
+    return allPlayers
+      .filter((p) => p.team_id === selectedTeamIdInModal)
+      .filter((p) => allowed.has(p.pos))
+      .filter((p) => {
+        // No duplicates across slots unless it's already in THIS slot
+        const current = selections[selectedSlot.id];
+        const isAlreadyInThisSlot = current?.player_id === p.player_id;
+        if (isAlreadyInThisSlot) return true;
+        return !usedPlayerIds.has(p.player_id);
+      })
+      .filter((p) => {
+        if (!query.trim()) return true;
+        const q = query.toLowerCase();
+        return p.player_name.toLowerCase().includes(q) || p.pos.toLowerCase().includes(q);
+      })
+      .sort((a, b) => a.player_name.localeCompare(b.player_name));
+  }, [allPlayers, query, selections, selectedSlot, selectedTeamIdInModal, usedPlayerIds]);
+
+  const pickPlayerForSlot = (p: Player) => {
+    if (!selectedSlot || locked) return;
+
+    // Defensive checks (should already be filtered)
+    if (p.conference && p.conference !== selectedSlot.conference) return;
+    if (!selectedSlot.allowed.includes(p.pos)) return;
+
+    // Prevent duplicates
+    const current = selections[selectedSlot.id];
+    const alreadyUsed = usedPlayerIds.has(p.player_id);
+    const isSameAsCurrent = current?.player_id === p.player_id;
+    if (alreadyUsed && !isSameAsCurrent) return;
+
+    setSelections((prev) => ({ ...prev, [selectedSlot.id]: p }));
+    closeModal();
+  };
+
+  const visibleSlots = useMemo(() => {
+    if (filter === "ALL") return { afc: slotsAFC, nfc: slotsNFC };
+    if (filter === "AFC") return { afc: slotsAFC, nfc: [] as SlotDef[] };
+    return { afc: [] as SlotDef[], nfc: slotsNFC };
+  }, [filter, slotsAFC, slotsNFC]);
+
+  const SlotCard = ({ slot }: { slot: SlotDef }) => {
+    const p = selections[slot.id];
+    const isFilled = !!p;
+
     return (
       <button
-        key={team.id}
         disabled={locked}
-        onClick={() => setSelectedTeamId(team.id)}
+        onClick={() => openSlot(slot.id)}
         className={[
           "w-full rounded-lg border border-border bg-surface p-4 text-left",
           "flex items-center justify-between",
@@ -60,108 +278,64 @@ export default function RosterBuilder() {
         ].join(" ")}
       >
         <div>
-          <div className="text-sm font-semibold">
-            {team.id} {team.name}
-            <span className="ml-2 text-xs text-muted">{team.conference}</span>
-          </div>
-          {chosen ? (
+          <div className="text-xs font-semibold text-muted">{slot.conference}</div>
+          <div className="text-sm font-semibold">{slotTitle(slot)}</div>
+
+          {isFilled ? (
             <div className="mt-2 text-sm">
-              <span className="text-muted">Selected: </span>
-              <span className="font-semibold">{chosen.name}</span>{" "}
-              <span className="text-muted">({chosen.pos})</span>
+              <span className="font-semibold">{p!.player_name}</span>{" "}
+              <span className="text-muted">
+                ({p!.pos} • {p!.team_abbr ?? p!.team_id})
+              </span>
             </div>
           ) : (
-            <div className="mt-2 text-sm text-muted">Pick a player →</div>
+            <div className="mt-2 text-sm text-muted">
+              Choose {slot.allowed.join("/")} →
+            </div>
           )}
         </div>
 
-        <div className="text-xs text-muted">
-          {chosen ? "✓" : "•"}
+        <div className="flex items-center gap-2">
+          {isFilled && !locked && (
+            <button
+              type="button"
+              className="rounded-md border border-border px-2 py-1 text-xs font-semibold text-muted hover:text-text"
+              onClick={(e) => {
+                e.stopPropagation();
+                clearSlot(slot.id);
+              }}
+            >
+              Clear
+            </button>
+          )}
+          <div className="text-xs text-muted">{isFilled ? "✓" : "•"}</div>
         </div>
       </button>
     );
   };
-
-  const closePicker = () => {
-    setSelectedTeamId(null);
-    setQuery("");
-  };
-
-  const pickPlayer = (p: Player) => {
-    if (locked) return;
-    setSelections((prev) => ({ ...prev, [p.teamId]: p }));
-    closePicker();
-  };
-
-  const clearTeam = (teamId: string) => {
-    if (locked) return;
-    setSelections((prev) => {
-      const next = { ...prev };
-      delete next[teamId];
-      return next;
-    });
-  };
-    const continueRoster = () => {
-    if (locked) {
-      document.getElementById("review")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-      return;
-    }
-
-    // Find the first team that does not have a selected player yet
-    const nextTeam = playoffTeams.find((t) => !selections[t.id]);
-
-    if (nextTeam) {
-      setSelectedTeamId(nextTeam.id); // opens the picker
-      return;
-    }
-
-    // If all teams are selected, jump to review
-    document.getElementById("review")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  };
-
-
-  const lockRoster = () => {
-  if (!canLock) return;
-  setLocked(true);
-};
-
-
-
-const reviewText = locked
-  ? "View Roster"
-  : selectedCount < totalTeams
-  ? "Continue"
-  : "Review Roster";
-
 
   return (
     <main className="pb-24">
       <div className="mb-4">
         <h1 className="text-xl font-semibold">Roster</h1>
         <p className="mt-1 text-sm text-muted">
-          Pick one player from each playoff team. Roster locks before kickoff.
+          Build your roster by slot. Each conference requires: QB, RB, WR, TE, 2 FLEX, 1 SUPERFLEX.
         </p>
       </div>
 
       {/* Progress */}
       <div className="mb-4 rounded-lg border border-border bg-surface p-4">
         <div className="flex items-center justify-between">
-          <div className="text-sm text-muted">Teams selected</div>
+          <div className="text-sm text-muted">Slots filled</div>
           <div className="text-sm font-semibold">
-            {selectedCount} / {totalTeams}
+            {filledCount} / {totalSlots}
           </div>
         </div>
         <div className="mt-3 h-2 w-full rounded-full bg-border">
           <div
             className="h-2 rounded-full bg-accent"
             style={{
-              width: `${Math.round((selectedCount / totalTeams) * 100)}%`,
+              width: `${Math.round((filledCount / totalSlots) * 100)}%`,
             }}
           />
         </div>
@@ -169,33 +343,59 @@ const reviewText = locked
 
       {/* Filters */}
       <div className="mb-4 flex items-center gap-2">
-        <button
-          className={pillClass(filter === "ALL")}
-          onClick={() => setFilter("ALL")}
-        >
+        <button className={pillClass(filter === "ALL")} onClick={() => setFilter("ALL")}>
           ALL
         </button>
-        <button
-          className={pillClass(filter === "AFC")}
-          onClick={() => setFilter("AFC")}
-        >
+        <button className={pillClass(filter === "AFC")} onClick={() => setFilter("AFC")}>
           AFC
         </button>
-        <button
-          className={pillClass(filter === "NFC")}
-          onClick={() => setFilter("NFC")}
-        >
+        <button className={pillClass(filter === "NFC")} onClick={() => setFilter("NFC")}>
           NFC
         </button>
 
-        <div className="ml-auto text-xs text-muted">
-          {locked ? "Locked" : "Editable"}
-        </div>
+        <div className="ml-auto text-xs text-muted">{locked ? "Locked" : "Editable"}</div>
       </div>
 
-      {/* Team list */}
+      {/* Loading / Errors */}
+      {(teamsLoading || playersLoading) && (
+        <div className="mb-4 rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+          Loading {teamsLoading ? "teams" : "players"}...
+        </div>
+      )}
+      {teamsError && (
+        <div className="mb-4 rounded-lg border border-danger/40 bg-surface p-4 text-sm text-danger">
+          {teamsError}
+        </div>
+      )}
+      {playersError && (
+        <div className="mb-4 rounded-lg border border-danger/40 bg-surface p-4 text-sm text-danger">
+          {playersError}
+        </div>
+      )}
+
+      {/* Slot grid */}
       <div className="grid gap-3">
-        {teams.map(teamRow)}
+        {visibleSlots.afc.length > 0 && (
+          <div className="mt-2">
+            <h2 className="mb-2 text-sm font-semibold text-muted">AFC</h2>
+            <div className="grid gap-3">
+              {visibleSlots.afc.map((slot) => (
+                <SlotCard key={slot.id} slot={slot} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {visibleSlots.nfc.length > 0 && (
+          <div className="mt-6">
+            <h2 className="mb-2 text-sm font-semibold text-muted">NFC</h2>
+            <div className="grid gap-3">
+              {visibleSlots.nfc.map((slot) => (
+                <SlotCard key={slot.id} slot={slot} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bottom action bar */}
@@ -203,23 +403,25 @@ const reviewText = locked
         <div className="mx-auto max-w-md rounded-xl border border-border bg-surface/95 p-3 backdrop-blur">
           <div className="flex items-center justify-between">
             <div className="text-sm">
-              <span className="text-muted">Selected: </span>
+              <span className="text-muted">Filled: </span>
               <span className="font-semibold">
-                {selectedCount} / {totalTeams}
+                {filledCount} / {totalSlots}
               </span>
             </div>
-<button
-  disabled={!canReview}
-  className={[
-    "rounded-lg px-4 py-2 text-sm font-semibold",
-    canReview ? "bg-border text-text" : "bg-border/60 text-muted",
-  ].join(" ")}
-  onClick={continueRoster}
->
-  {reviewText}
-</button>
 
-
+            <button
+              disabled={!canReview}
+              className={[
+                "rounded-lg px-4 py-2 text-sm font-semibold",
+                canReview ? "bg-border text-text" : "bg-border/60 text-muted",
+              ].join(" ")}
+              onClick={() => {
+                const el = document.getElementById("review");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              {reviewText}
+            </button>
           </div>
 
           <button
@@ -240,49 +442,34 @@ const reviewText = locked
         <div className="mb-3 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-muted">Review</h2>
+            {locked && lockedAt && (
+              <div className="mt-1 text-xs text-muted">
+                Locked: {new Date(lockedAt).toLocaleString()}
+              </div>
+            )}
           </div>
-
-          {locked && (
-            <span className="rounded-full bg-border px-3 py-1 text-xs font-semibold text-text">
-              🔒 Locked
-            </span>
-          )}
         </div>
 
-
         <div className="overflow-hidden rounded-lg border border-border bg-surface">
-          {playoffTeams.map((t) => {
-            const p = selections[t.id];
-            const missing = !p;
+          {SLOTS.map((slot) => {
+            const p = selections[slot.id];
             return (
               <div
-                key={t.id}
+                key={slot.id}
                 className="flex items-center justify-between border-b border-border p-3 last:border-b-0"
               >
                 <div>
                   <div className="text-sm font-semibold">
-                    {t.id} {t.name}
-                    <span className="ml-2 text-xs text-muted">{t.conference}</span>
+                    {slot.conference} {slotTitle(slot)}
                   </div>
                   {p ? (
                     <div className="text-xs text-muted">
-                      {p.name} ({p.pos})
+                      {p.player_name} ({p.pos} • {p.team_abbr ?? p.team_id})
                     </div>
                   ) : (
-                    <div className="text-xs text-danger">
-                      Missing selection
-                    </div>
+                    <div className="text-xs text-danger">Missing selection</div>
                   )}
                 </div>
-
-                {!locked && !missing && (
-                  <button
-                    className="text-xs font-semibold text-muted hover:text-text"
-                    onClick={() => clearTeam(t.id)}
-                  >
-                    Clear
-                  </button>
-                )}
               </div>
             );
           })}
@@ -290,79 +477,121 @@ const reviewText = locked
       </div>
 
       {/* Picker Modal */}
-      {selectedTeamId && (
+      {selectedSlot && (
         <div className="fixed inset-0 z-50">
-          {/* overlay */}
           <button
             className="absolute inset-0 bg-black/60"
-            onClick={closePicker}
-            aria-label="Close player picker"
+            onClick={closeModal}
+            aria-label="Close picker"
           />
 
-          {/* sheet */}
           <div className="absolute bottom-20 left-0 right-0 mx-auto max-w-md rounded-t-2xl border border-border bg-surface p-4">
             <div className="flex items-start justify-between">
               <div>
-                <div className="text-sm text-muted">Pick a player</div>
+                <div className="text-sm text-muted">Pick for</div>
                 <div className="text-lg font-semibold">
-                  {selectedTeamId}{" "}
-                  {playoffTeams.find((t) => t.id === selectedTeamId)?.name}
+                  {selectedSlot.conference} {slotTitle(selectedSlot)}
+                </div>
+                <div className="mt-1 text-xs text-muted">
+                  Allowed: {selectedSlot.allowed.join("/")}
                 </div>
               </div>
+
               <button
                 className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-muted"
-                onClick={closePicker}
+                onClick={closeModal}
               >
                 Close
               </button>
             </div>
 
+            {/* Team selection */}
+            <div className="mt-4">
+              <label className="mb-2 block text-xs font-semibold text-muted">
+                Team
+              </label>
+              <select
+                value={selectedTeamIdInModal ?? ""}
+                onChange={(e) => setSelectedTeamIdInModal(e.target.value || null)}
+                className="w-full rounded-lg border border-border bg-bg px-3 py-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent/50"
+              >
+                <option value="">Select a team…</option>
+                {modalTeams.map((t) => (
+                  <option key={t.team_id} value={t.team_id}>
+                    {(t.team_abbr ?? t.team_id)} — {t.team_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Search */}
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search player..."
-              className="mt-4 w-full rounded-lg border border-border bg-bg px-3 py-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50"
+              disabled={!selectedTeamIdInModal}
+              className={[
+                "mt-4 w-full rounded-lg border border-border bg-bg px-3 py-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50",
+                !selectedTeamIdInModal ? "opacity-60" : "",
+              ].join(" ")}
             />
 
-            <div className="mt-4 max-h-[50vh] overflow-y-auto overscroll-contain rounded-lg border border-border">
+            {/* Player list */}
+            <div className="mt-4 max-h-[55vh] overflow-auto rounded-lg border border-border">
+              {!selectedTeamIdInModal && (
+                <div className="p-3 text-sm text-muted">Select a team to view eligible players.</div>
+              )}
 
-              {(playersByTeam[selectedTeamId] ?? [])
-                .filter((p) => {
-                  if (!query.trim()) return true;
-                  const q = query.toLowerCase();
-                  return (
-                    p.name.toLowerCase().includes(q) ||
-                    p.pos.toLowerCase().includes(q)
-                  );
-                })
-                .map((p) => {
-                  const isSelected = selections[p.teamId]?.id === p.id;
+              {selectedTeamIdInModal && playersLoading && (
+                <div className="p-3 text-sm text-muted">Loading players...</div>
+              )}
+
+              {selectedTeamIdInModal && playersError && (
+                <div className="p-3 text-sm text-danger">{playersError}</div>
+              )}
+
+              {selectedTeamIdInModal &&
+                !playersLoading &&
+                !playersError &&
+                modalPlayers.map((p) => {
+                  const current = selections[selectedSlot.id];
+                  const isSelectedHere = current?.player_id === p.player_id;
+
                   return (
                     <button
-                      key={p.id}
-                      onClick={() => pickPlayer(p)}
+                      key={p.player_id}
+                      onClick={() => pickPlayerForSlot(p)}
                       className={[
                         "w-full border-b border-border p-3 text-left last:border-b-0",
                         "flex items-center justify-between",
-                        isSelected ? "bg-border/40" : "hover:bg-border/20",
+                        isSelectedHere ? "bg-border/40" : "hover:bg-border/20",
                       ].join(" ")}
                     >
                       <div>
-                        <div className="text-sm font-semibold">{p.name}</div>
-                        <div className="text-xs text-muted">{p.pos}</div>
+                        <div className="text-sm font-semibold">{p.player_name}</div>
+                        <div className="text-xs text-muted">
+                          {p.pos} • {p.team_abbr ?? p.team_id}
+                        </div>
                       </div>
-                      {isSelected && (
-                        <span className="text-xs font-semibold text-accent">
-                          Selected
-                        </span>
+                      {isSelectedHere && (
+                        <span className="text-xs font-semibold text-accent">Selected</span>
                       )}
                     </button>
                   );
                 })}
+
+              {selectedTeamIdInModal &&
+                !playersLoading &&
+                !playersError &&
+                modalPlayers.length === 0 && (
+                  <div className="p-3 text-sm text-muted">
+                    No eligible players found (position rules + duplicates apply).
+                  </div>
+                )}
             </div>
 
             <p className="mt-3 text-xs text-muted">
-              This is fake data for now. Next step is swapping in your API.
+              Rules enforced: slot position, conference, and no duplicate players.
             </p>
           </div>
         </div>

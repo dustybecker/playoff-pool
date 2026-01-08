@@ -2,13 +2,13 @@
   "name": "playoff-pool",
   "version": "0.1.0",
   "private": true,
-"scripts": {
-  "dev": "next dev --webpack",
-  "build": "next build",
-  "start": "next start"
-}
-,
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build",
+    "start": "next start"
+  },
   "dependencies": {
+    "@supabase/supabase-js": "^2.90.1",
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3"

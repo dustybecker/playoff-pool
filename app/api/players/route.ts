@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const q = searchParams.get("q"); // search string
 
   let query = supabaseAdmin
-    .from("pool_players")
+    .from("pool_players_curated")
     .select("player_id, player_name, pos, team_id, team_abbr, conference")
     .eq("pool_id", poolId);
 

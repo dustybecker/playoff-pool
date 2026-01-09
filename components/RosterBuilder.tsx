@@ -97,6 +97,13 @@ export default function RosterBuilder() {
   const [selectedTeamIdInModal, setSelectedTeamIdInModal] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
+  // Roster Submission
+
+const [entrantName, setEntrantName] = useState("");
+const [submitStatus, setSubmitStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+
+
   // Load teams once
   useEffect(() => {
     let cancelled = false;
@@ -156,6 +163,8 @@ export default function RosterBuilder() {
 
   const canReview = filledCount > 0;
   const canLock = filledCount === totalSlots && !locked;
+  const canSubmit = filledCount === totalSlots && !playersLoading && !teamsLoading;
+
 
   const usedPlayerIds = useMemo(() => {
     const ids = new Set<string>();
@@ -436,6 +445,84 @@ export default function RosterBuilder() {
           </button>
         </div>
       </div>
+
+      {/* Submit */}
+<div className="mt-8 rounded-lg border border-border bg-surface p-4">
+  <h2 className="text-sm font-semibold text-muted">Submit</h2>
+  <p className="mt-1 text-sm text-muted">
+    Enter your name and submit your roster. Resubmitting with the same name will overwrite your prior entry.
+  </p>
+
+  <input
+    value={entrantName}
+    onChange={(e) => {
+      setEntrantName(e.target.value);
+      setSubmitStatus("idle");
+      setSubmitMessage(null);
+    }}
+    placeholder="Your name"
+    className="mt-3 w-full rounded-lg border border-border bg-bg px-3 py-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/50"
+  />
+
+  <button
+    disabled={!canSubmit || submitStatus === "submitting" || !entrantName.trim()}
+    className={[
+      "mt-3 w-full rounded-lg py-3 text-sm font-semibold",
+      !canSubmit || !entrantName.trim() || submitStatus === "submitting"
+        ? "bg-border/60 text-muted"
+        : "bg-accent text-black",
+    ].join(" ")}
+    onClick={async () => {
+      try {
+        setSubmitStatus("submitting");
+        setSubmitMessage(null);
+
+        const res = await fetch("/api/submit-roster", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            poolId,
+            entrantName,
+            selections,
+          }),
+        });
+
+        const json = await res.json();
+        if (!res.ok) {
+          const msg =
+            json?.errors?.length
+              ? json.errors.join(" ")
+              : json?.error ?? "Submission failed.";
+          setSubmitStatus("error");
+          setSubmitMessage(msg);
+          return;
+        }
+
+        setSubmitStatus("success");
+        setSubmitMessage(`Submitted as "${json.entrantName}".`);
+      } catch (e: any) {
+        setSubmitStatus("error");
+        setSubmitMessage(e?.message ?? "Submission failed.");
+      }
+    }}
+  >
+    {submitStatus === "submitting" ? "Submitting..." : "Submit Roster"}
+  </button>
+
+  {submitMessage && (
+    <div
+      className={[
+        "mt-3 rounded-lg border p-3 text-sm",
+        submitStatus === "success"
+          ? "border-border text-text"
+          : "border-danger/40 text-danger",
+      ].join(" ")}
+    >
+      {submitMessage}
+    </div>
+  )}
+</div>
+
 
       {/* Review */}
       <div id="review" className="mt-8">

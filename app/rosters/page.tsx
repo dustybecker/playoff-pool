@@ -104,12 +104,22 @@ export default function RostersPage() {
 
   return (
     <main className="pb-24">
-      <div className="mb-4">
-        <h1 className="text-xl font-semibold">Rosters</h1>
-        <p className="mt-1 text-sm text-muted">
-          Showing <span className="font-semibold">{entries.length}</span> submitted rosters.
-        </p>
-      </div>
+<div className="mb-4 flex items-start justify-between gap-3">
+  <div>
+    <h1 className="text-xl font-semibold">Rosters</h1>
+    <p className="mt-1 text-sm text-muted">
+      Showing {entries.length} submitted rosters.
+    </p>
+  </div>
+
+  <a
+    href="/rosters/all"
+    className="rounded-lg border border-border bg-bg px-3 py-2 text-sm font-semibold text-text hover:bg-border/40"
+  >
+    View All
+  </a>
+</div>
+
 
       {loading && (
         <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">

@@ -24,7 +24,7 @@ type Player = {
   conference: Conference | null;
 };
 
-type SlotBase = "QB" | "RB" | "WR" | "TE" | "FLEX1" | "FLEX2" | "SFLEX" | "BENCH" |;
+type SlotBase = "QB" | "RB" | "WR" | "TE" | "FLEX1" | "FLEX2" | "SFLEX" | "BENCH";
 type SlotId = `${Conference}_${SlotBase}`;
 
 type SlotDef = {

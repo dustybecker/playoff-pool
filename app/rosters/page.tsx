@@ -141,7 +141,7 @@ export default function RostersPage() {
                       <div className="mt-1 text-xs text-muted">
                         Updated: {e.updated_at ? new Date(e.updated_at).toLocaleString() : "—"}
                         <span className="mx-2">•</span>
-                        Filled: {filledCount}/16
+                        Filled: {filledCount}/18
                       </div>
                     </div>
                     <div className="text-xs font-semibold text-muted">{isOpen ? "Hide" : "View"}</div>

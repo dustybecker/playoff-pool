@@ -1,33 +1,109 @@
-const entries = [
-  { name: "Mike", points: 124.6, active: 3 },
-  { name: "Sarah", points: 119.2, active: 2 },
-  { name: "You", points: 117.8, active: 4 },
-  { name: "Dave", points: 102.4, active: 1 },
-];
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+type Entry = {
+  entrant_name: string;
+  submitted_at: string | null;
+  updated_at: string | null;
+  slot_count: number;
+};
 
 export default function LeaderboardPage() {
-  return (
-    <main>
-      <h1 className="text-xl font-semibold">Leaderboard</h1>
-      <p className="mt-2 text-sm text-muted">
-        Live points update as games finish.
-      </p>
+  const poolId = process.env.NEXT_PUBLIC_POOL_ID || "2026-playoffs";
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-      <div className="mt-6 overflow-hidden rounded-lg border border-border bg-surface">
-        <div className="divide-y divide-border">
-          {entries.map((e, idx) => (
-            <div key={e.name} className="flex items-center justify-between p-3">
-              <div>
-                <div className="font-semibold">
-                  {idx + 1}. {e.name}
-                </div>
-                <div className="text-xs text-muted">{e.active} active</div>
-              </div>
-              <div className="text-right font-semibold">{e.points}</div>
-            </div>
-          ))}
-        </div>
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(`/api/leaderboard?pool_id=${encodeURIComponent(poolId)}`);
+        const text = await res.text();
+
+        let json: any;
+        try {
+          json = JSON.parse(text);
+        } catch {
+          throw new Error(`Leaderboard API did not return JSON. First 200 chars:\n${text.slice(0, 200)}`);
+        }
+
+        if (!res.ok) throw new Error(json?.error || "Failed to load leaderboard");
+
+        if (!cancelled) setEntries(json.entries || []);
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || "Unknown error");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [poolId]);
+
+  const rows = useMemo(() => {
+    // For now: newest submission at top (already returned that way)
+    // Later: sort by points desc.
+    return entries;
+  }, [entries]);
+
+  return (
+    <main className="pb-24">
+      <div className="mb-4">
+        <h1 className="text-xl font-semibold">Leaderboard</h1>
+        <p className="mt-1 text-sm text-muted">
+          Entries submitted: <span className="font-semibold">{entries.length}</span>
+        </p>
       </div>
+
+      {loading && (
+        <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+          Loading leaderboard…
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-lg border border-danger/40 bg-surface p-4 text-sm text-danger">
+          {error}
+        </div>
+      )}
+
+      {!loading && !error && (
+        <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          {rows.length === 0 ? (
+            <div className="p-4 text-sm text-muted">No entries yet.</div>
+          ) : (
+            rows.map((e, idx) => (
+              <div
+                key={`${e.entrant_name}-${idx}`}
+                className="flex items-center justify-between border-b border-border p-3 last:border-b-0"
+              >
+                <div>
+                  <div className="text-sm font-semibold">
+                    {idx + 1}. {e.entrant_name}
+                  </div>
+                  <div className="mt-1 text-xs text-muted">
+                    Updated: {e.updated_at ? new Date(e.updated_at).toLocaleString() : "—"}
+                    <span className="mx-2">•</span>
+                    Slots: {e.slot_count}
+                  </div>
+                </div>
+
+                {/* Placeholder for points */}
+                <div className="text-sm font-semibold text-muted">—</div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </main>
   );
 }

@@ -23,7 +23,8 @@ const SLOT_ORDER: string[] = [
   "AFC_FLEX1",
   "AFC_FLEX2",
   "AFC_SFLEX",
-  "AFC_BENCH",
+  "AFC_BENCH1",
+  "AFC_BENCH2",
   "NFC_QB",
   "NFC_RB",
   "NFC_WR",
@@ -31,7 +32,8 @@ const SLOT_ORDER: string[] = [
   "NFC_FLEX1",
   "NFC_FLEX2",
   "NFC_SFLEX",
-  "NFC_BENCH",
+  "NFC_BENCH1",
+  "NFC_BENCH2"
 ];
 
 function slotLabel(slotId: string) {
@@ -43,8 +45,10 @@ function slotLabel(slotId: string) {
       ? "Flex 1"
       : base === "FLEX2"
       ? "Flex 2"
-      : base === "BENCH"
-      ? "Bench"
+      : base === "BENCH1"
+      ? "Bench 1"
+      : base === "BENCH2"
+      ? "Bench 2"
       : base;
   return `${conf} ${prettyBase}`;
 }

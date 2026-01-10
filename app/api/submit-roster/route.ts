@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 type Conference = "AFC" | "NFC";
 type Pos = "QB" | "RB" | "WR" | "TE";
-type SlotBase = "QB" | "RB" | "WR" | "TE" | "FLEX1" | "FLEX2" | "SFLEX" | "BENCH";
+type SlotBase = "QB" | "RB" | "WR" | "TE" | "FLEX1" | "FLEX2" | "SFLEX" | "BENCH1" | "BENCH2";
 type SlotId = `${Conference}_${SlotBase}`;
 
 type Player = {
@@ -29,7 +29,8 @@ const SLOTS: Array<{ id: SlotId; conf: Conference; allowed: Pos[] }> = [
   { id: "AFC_FLEX1", conf: "AFC", allowed: ["RB", "WR", "TE"] },
   { id: "AFC_FLEX2", conf: "AFC", allowed: ["RB", "WR", "TE"] },
   { id: "AFC_SFLEX", conf: "AFC", allowed: ["QB", "RB", "WR", "TE"] },
-  { id: "AFC_BENCH", conf: "AFC", allowed: ["QB", "RB", "WR", "TE"] },
+  { id: "AFC_BENCH1", conf: "AFC", allowed: ["QB", "RB", "WR", "TE"] },
+  { id: "AFC_BENCH2", conf: "AFC", allowed: ["QB", "RB", "WR", "TE"] },
 
 
 
@@ -40,7 +41,9 @@ const SLOTS: Array<{ id: SlotId; conf: Conference; allowed: Pos[] }> = [
   { id: "NFC_FLEX1", conf: "NFC", allowed: ["RB", "WR", "TE"] },
   { id: "NFC_FLEX2", conf: "NFC", allowed: ["RB", "WR", "TE"] },
   { id: "NFC_SFLEX", conf: "NFC", allowed: ["QB", "RB", "WR", "TE"] },
-  { id: "NFC_BENCH", conf: "NFC", allowed: ["QB", "RB", "WR", "TE"] },
+  { id: "NFC_BENCH1", conf: "NFC", allowed: ["QB", "RB", "WR", "TE"] },
+  { id: "NFC_BENCH2", conf: "NFC", allowed: ["QB", "RB", "WR", "TE"] },
+
 ];
 
 // Optional: set a lock deadline (server-side enforcement)

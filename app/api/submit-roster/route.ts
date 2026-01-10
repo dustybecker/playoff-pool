@@ -29,6 +29,9 @@ const SLOTS: Array<{ id: SlotId; conf: Conference; allowed: Pos[] }> = [
   { id: "AFC_FLEX1", conf: "AFC", allowed: ["RB", "WR", "TE"] },
   { id: "AFC_FLEX2", conf: "AFC", allowed: ["RB", "WR", "TE"] },
   { id: "AFC_SFLEX", conf: "AFC", allowed: ["QB", "RB", "WR", "TE"] },
+  { id: "AFC_BENCH", conf: "AFC", allowed: ["QB", "RB", "WR", "TE"] },
+
+
 
   { id: "NFC_QB", conf: "NFC", allowed: ["QB"] },
   { id: "NFC_RB", conf: "NFC", allowed: ["RB"] },
@@ -37,6 +40,7 @@ const SLOTS: Array<{ id: SlotId; conf: Conference; allowed: Pos[] }> = [
   { id: "NFC_FLEX1", conf: "NFC", allowed: ["RB", "WR", "TE"] },
   { id: "NFC_FLEX2", conf: "NFC", allowed: ["RB", "WR", "TE"] },
   { id: "NFC_SFLEX", conf: "NFC", allowed: ["QB", "RB", "WR", "TE"] },
+  { id: "NFC_BENCH", conf: "NFC", allowed: ["QB", "RB", "WR", "TE"] },
 ];
 
 // Optional: set a lock deadline (server-side enforcement)

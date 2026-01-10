@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 type Conference = "AFC" | "NFC";
 type Pos = "QB" | "RB" | "WR" | "TE";
-type SlotBase = "QB" | "RB" | "WR" | "TE" | "FLEX1" | "FLEX2" | "SFLEX";
+type SlotBase = "QB" | "RB" | "WR" | "TE" | "FLEX1" | "FLEX2" | "SFLEX" | "BENCH";
 type SlotId = `${Conference}_${SlotBase}`;
 
 type Player = {

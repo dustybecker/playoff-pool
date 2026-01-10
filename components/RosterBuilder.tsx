@@ -24,7 +24,7 @@ type Player = {
   conference: Conference | null;
 };
 
-type SlotBase = "QB" | "RB" | "WR" | "TE" | "FLEX1" | "FLEX2" | "SFLEX" | "BENCH";
+type SlotBase = "QB" | "RB" | "WR" | "TE" | "FLEX1" | "FLEX2" | "SFLEX" | "BENCH1" | "BENCH2";
 type SlotId = `${Conference}_${SlotBase}`;
 
 type SlotDef = {
@@ -42,7 +42,8 @@ const SLOTS: SlotDef[] = [
   { id: "AFC_FLEX1", conference: "AFC", label: "FLEX", allowed: ["RB", "WR", "TE"] },
   { id: "AFC_FLEX2", conference: "AFC", label: "FLEX", allowed: ["RB", "WR", "TE"] },
   { id: "AFC_SFLEX", conference: "AFC", label: "SUPERFLEX", allowed: ["QB", "RB", "WR", "TE"] },
-  { id: "AFC_BENCH", conference: "AFC", label: "AFC_BENCH", allowed: ["QB", "RB", "WR", "TE"] },
+  { id: "AFC_BENCH1", conference: "AFC", label: "AFC_BENCH", allowed: ["QB", "RB", "WR", "TE"] },
+  { id: "AFC_BENCH2", conference: "AFC", label: "AFC_BENCH", allowed: ["QB", "RB", "WR", "TE"] },
 
   { id: "NFC_QB", conference: "NFC", label: "QB", allowed: ["QB"] },
   { id: "NFC_RB", conference: "NFC", label: "RB", allowed: ["RB"] },
@@ -51,7 +52,9 @@ const SLOTS: SlotDef[] = [
   { id: "NFC_FLEX1", conference: "NFC", label: "FLEX", allowed: ["RB", "WR", "TE"] },
   { id: "NFC_FLEX2", conference: "NFC", label: "FLEX", allowed: ["RB", "WR", "TE"] },
   { id: "NFC_SFLEX", conference: "NFC", label: "SUPERFLEX", allowed: ["QB", "RB", "WR", "TE"] },
-    { id: "NFC_BENCH", conference: "NFC", label: "NFC_BENCH", allowed: ["QB", "RB", "WR", "TE"] },
+  { id: "NFC_BENCH1", conference: "NFC", label: "NFC_BENCH", allowed: ["QB", "RB", "WR", "TE"] },
+  { id: "NFC_BENCH2", conference: "NFC", label: "NFC_BENCH", allowed: ["QB", "RB", "WR", "TE"] },
+
 
 ];
 
@@ -75,6 +78,8 @@ function slotTitle(slot: SlotDef) {
   if (slot.id.endsWith("FLEX1")) return "FLEX 1";
   if (slot.id.endsWith("FLEX2")) return "FLEX 2";
   if (slot.id.endsWith("SFLEX")) return "SUPERFLEX";
+  if (slot.id.endsWith("BENCH1")) return "BENCH 1";
+  if (slot.id.endsWith("BENCH2")) return "BENCH 2;
   return slot.label;
 }
 

@@ -78,8 +78,6 @@ function slotTitle(slot: SlotDef) {
   if (slot.id.endsWith("FLEX1")) return "FLEX 1";
   if (slot.id.endsWith("FLEX2")) return "FLEX 2";
   if (slot.id.endsWith("SFLEX")) return "SUPERFLEX";
-  if (slot.id.endsWith("BENCH1")) return "BENCH 1";
-  if (slot.id.endsWith("BENCH2")) return "BENCH 2;
   return slot.label;
 }
 

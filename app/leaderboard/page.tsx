@@ -4,9 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 
 type Entry = {
   entrant_name: string;
-  submitted_at: string | null;
+  points: number;
   updated_at: string | null;
-  slot_count: number;
 };
 
 export default function LeaderboardPage() {
@@ -23,14 +22,21 @@ export default function LeaderboardPage() {
       setError(null);
 
       try {
-        const res = await fetch(`/api/leaderboard?pool_id=${encodeURIComponent(poolId)}`);
+        const res = await fetch(
+          `/api/leaderboard?pool_id=${encodeURIComponent(poolId)}`
+        );
         const text = await res.text();
 
         let json: any;
         try {
           json = JSON.parse(text);
         } catch {
-          throw new Error(`Leaderboard API did not return JSON. First 200 chars:\n${text.slice(0, 200)}`);
+          throw new Error(
+            `Leaderboard API did not return JSON. First 200 chars:\n${text.slice(
+              0,
+              200
+            )}`
+          );
         }
 
         if (!res.ok) throw new Error(json?.error || "Failed to load leaderboard");
@@ -50,8 +56,7 @@ export default function LeaderboardPage() {
   }, [poolId]);
 
   const rows = useMemo(() => {
-    // For now: newest submission at top (already returned that way)
-    // Later: sort by points desc.
+    // API is already sorted by points desc; keep as-is.
     return entries;
   }, [entries]);
 
@@ -60,7 +65,8 @@ export default function LeaderboardPage() {
       <div className="mb-4">
         <h1 className="text-xl font-semibold">Leaderboard</h1>
         <p className="mt-1 text-sm text-muted">
-          Entries submitted: <span className="font-semibold">{entries.length}</span>
+          Entries submitted:{" "}
+          <span className="font-semibold">{entries.length}</span>
         </p>
       </div>
 
@@ -91,14 +97,14 @@ export default function LeaderboardPage() {
                     {idx + 1}. {e.entrant_name}
                   </div>
                   <div className="mt-1 text-xs text-muted">
-                    Updated: {e.updated_at ? new Date(e.updated_at).toLocaleString() : "—"}
-                    <span className="mx-2">•</span>
-                    Slots: {e.slot_count}
+                    Updated:{" "}
+                    {e.updated_at ? new Date(e.updated_at).toLocaleString() : "—"}
                   </div>
                 </div>
 
-                {/* Placeholder for points */}
-                <div className="text-sm font-semibold text-muted">—</div>
+                <div className="text-sm font-semibold">
+                  {Number.isFinite(e.points) ? e.points.toFixed(1) : "0.0"}
+                </div>
               </div>
             ))
           )}

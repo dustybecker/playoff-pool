@@ -103,7 +103,7 @@ export default function LeaderboardPage() {
                 </div>
 
                 <div className="text-sm font-semibold">
-                  {Number.isFinite(e.points) ? e.points.toFixed(1) : "0.0"}
+                  {Number.isFinite(e.points) ? e.points.toFixed(1) : "0.00"}
                 </div>
               </div>
             ))

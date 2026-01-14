@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 type Entry = {
   entrant_name: string;
   points: number;
-  updated_at: string | null;
 };
 
 export default function LeaderboardPage() {
@@ -96,10 +95,7 @@ export default function LeaderboardPage() {
                   <div className="text-sm font-semibold">
                     {idx + 1}. {e.entrant_name}
                   </div>
-                  <div className="mt-1 text-xs text-muted">
-                    Updated:{" "}
-                    {e.updated_at ? new Date(e.updated_at).toLocaleString() : "—"}
-                  </div>
+                  
                 </div>
 
                 <div className="text-sm font-semibold">

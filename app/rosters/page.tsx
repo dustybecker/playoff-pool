@@ -191,15 +191,16 @@ export default function RostersPage() {
 
     setSavingName(name);
     try {
-      const res = await fetch("/api/submit-roster", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pool_id: poolId,
-          entrant_name: name,
-          roster: normalizeRoster(roster),
-        }),
-      });
+      const res = await fetch("/api/edit-roster", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    pool_id: poolId,
+    entrant_name: name,
+    roster: normalizeRoster(roster),
+  }),
+});
+
 
       const text = await res.text();
       let json: any;

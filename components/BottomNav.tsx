@@ -12,7 +12,7 @@ const tabs: Tab[] = [
   { label: "Pool", href: "/" },
   { label: "Roster", href: "/roster" },
   { label: "Leaderboard", href: "/leaderboard" },
-  { label: "Rosters", href: "/rosters" }, // 👈 ADD THIS
+  { label: "Analysis", href: "/analysis" },
 ];
 
 export default function BottomNav() {

@@ -7,6 +7,7 @@ type Entry = {
   round1?: number;
   round2?: number;
   round3?: number;
+  round4?: number;
   total?: number;
 };
 
@@ -64,9 +65,17 @@ export default function LeaderboardPage() {
   const rows = useMemo(() => {
     return [...entries].sort((a, b) => {
       const totalA =
-        safeNumber(a.total) + safeNumber(a.round1) + safeNumber(a.round2) + safeNumber(a.round3);
+        safeNumber(a.total) +
+        safeNumber(a.round1) +
+        safeNumber(a.round2) +
+        safeNumber(a.round3) +
+        safeNumber(a.round4);
       const totalB =
-        safeNumber(b.total) + safeNumber(b.round1) + safeNumber(b.round2) + safeNumber(b.round3);
+        safeNumber(b.total) +
+        safeNumber(b.round1) +
+        safeNumber(b.round2) +
+        safeNumber(b.round3) +
+        safeNumber(b.round4);
       return totalB - totalA;
     });
   }, [entries]);
@@ -106,6 +115,7 @@ export default function LeaderboardPage() {
                     <th className="px-3 py-3 text-right">R1</th>
                     <th className="px-3 py-3 text-right">R2</th>
                     <th className="px-3 py-3 text-right">R3</th>
+                    <th className="px-3 py-3 text-right">R4</th>
                     <th className="px-3 py-3 text-right">Total</th>
                   </tr>
                 </thead>
@@ -114,8 +124,9 @@ export default function LeaderboardPage() {
                     const round1 = safeNumber(entry.round1);
                     const round2 = safeNumber(entry.round2);
                     const round3 = safeNumber(entry.round3);
+                    const round4 = safeNumber(entry.round4);
                     const total =
-                      safeNumber(entry.total) || round1 + round2 + round3;
+                      safeNumber(entry.total) || round1 + round2 + round3 + round4;
 
                     return (
                       <tr key={`${entry.entrant_name}-${idx}`}>
@@ -125,18 +136,7 @@ export default function LeaderboardPage() {
                         <td className="px-3 py-3 text-right">{round1.toFixed(1)}</td>
                         <td className="px-3 py-3 text-right">{round2.toFixed(1)}</td>
                         <td className="px-3 py-3 text-right">{round3.toFixed(1)}</td>
+                        <td className="px-3 py-3 text-right">{round4.toFixed(1)}</td>
                         <td className="px-3 py-3 text-right font-semibold">
                           {total.toFixed(1)}
                         </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-    </main>
-  );
-}

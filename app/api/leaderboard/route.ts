@@ -23,7 +23,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const byEntrant = new Map<string, { entrant_name: string; round1: number; round2: number; round3: number; total: number }>();
+  const byEntrant = new Map<
+    string,
+    { entrant_name: string; round1: number; round2: number; round3: number; round4: number; total: number }
+  >();
 
   for (const row of data ?? []) {
     const entrant = row.entrant_name;
@@ -34,12 +37,14 @@ export async function GET(req: Request) {
         round1: 0,
         round2: 0,
         round3: 0,
+        round4: 0,
         total: 0,
       };
 
     if (row.round === 1) record.round1 += points;
     if (row.round === 2) record.round2 += points;
     if (row.round === 3) record.round3 += points;
+    if (row.round === 4) record.round4 += points;
     record.total += points;
     byEntrant.set(entrant, record);
   }

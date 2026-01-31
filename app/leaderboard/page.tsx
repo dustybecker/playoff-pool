@@ -4,8 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 
 type Entry = {
   entrant_name: string;
-  points: number;
+  round1?: number;
+  round2?: number;
+  round3?: number;
+  total?: number;
 };
+
+function safeNumber(value: number | undefined) {
+  return Number.isFinite(value) ? value ?? 0 : 0;
+}
 
 export default function LeaderboardPage() {
   const poolId = process.env.NEXT_PUBLIC_POOL_ID || "2026-playoffs";
@@ -55,8 +62,13 @@ export default function LeaderboardPage() {
   }, [poolId]);
 
   const rows = useMemo(() => {
-    // API is already sorted by points desc; keep as-is.
-    return entries;
+    return [...entries].sort((a, b) => {
+      const totalA =
+        safeNumber(a.total) + safeNumber(a.round1) + safeNumber(a.round2) + safeNumber(a.round3);
+      const totalB =
+        safeNumber(b.total) + safeNumber(b.round1) + safeNumber(b.round2) + safeNumber(b.round3);
+      return totalB - totalA;
+    });
   }, [entries]);
 
   return (
@@ -86,23 +98,42 @@ export default function LeaderboardPage() {
           {rows.length === 0 ? (
             <div className="p-4 text-sm text-muted">No entries yet.</div>
           ) : (
-            rows.map((e, idx) => (
-              <div
-                key={`${e.entrant_name}-${idx}`}
-                className="flex items-center justify-between border-b border-border p-3 last:border-b-0"
-              >
-                <div>
-                  <div className="text-sm font-semibold">
-                    {idx + 1}. {e.entrant_name}
-                  </div>
-                  
-                </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] text-sm">
+                <thead className="border-b border-border text-xs uppercase tracking-wide text-muted">
+                  <tr>
+                    <th className="px-3 py-3 text-left">Entrant</th>
+                    <th className="px-3 py-3 text-right">R1</th>
+                    <th className="px-3 py-3 text-right">R2</th>
+                    <th className="px-3 py-3 text-right">R3</th>
+                    <th className="px-3 py-3 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {rows.map((entry, idx) => {
+                    const round1 = safeNumber(entry.round1);
+                    const round2 = safeNumber(entry.round2);
+                    const round3 = safeNumber(entry.round3);
+                    const total =
+                      safeNumber(entry.total) || round1 + round2 + round3;
 
-                <div className="text-sm font-semibold">
-                  {Number.isFinite(e.points) ? e.points.toFixed(1) : "0.00"}
-                </div>
-              </div>
-            ))
+                    return (
+                      <tr key={`${entry.entrant_name}-${idx}`}>
+                        <td className="px-3 py-3 font-semibold">
+                          {idx + 1}. {entry.entrant_name}
+                        </td>
+                        <td className="px-3 py-3 text-right">{round1.toFixed(1)}</td>
+                        <td className="px-3 py-3 text-right">{round2.toFixed(1)}</td>
+                        <td className="px-3 py-3 text-right">{round3.toFixed(1)}</td>
+                        <td className="px-3 py-3 text-right font-semibold">
+                          {total.toFixed(1)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}

@@ -1,37 +1,19 @@
 const ENTRIES = [
-  { entrant: "Cody Conners", player_id: "7", player_name: "Jaxon Smith-Njigba", multiplier: 4 },
-  { entrant: "Chris", player_id: "7", player_name: "Jaxon Smith-Njigba", multiplier: 4 },
-  { entrant: "Mach", player_id: "7", player_name: "Jaxon Smith-Njigba", multiplier: 4 },
-  { entrant: "Vobenomic$", player_id: "7", player_name: "Jaxon Smith-Njigba", multiplier: 4 },
-  { entrant: "Dusty", player_id: "7", player_name: "Jaxon Smith-Njigba", multiplier: 4 },
-  { entrant: "Nate", player_id: "7", player_name: "Jaxon Smith-Njigba", multiplier: 2 },
-  { entrant: "Nate", player_id: "53", player_name: "Sam Darnold", multiplier: 4 },
-  { entrant: "Cody Conners", player_id: "19", player_name: "Matthew Stafford", multiplier: 4 },
-  { entrant: "Mach", player_id: "19", player_name: "Matthew Stafford", multiplier: 4 },
-  { entrant: "Vobenomic$", player_id: "19", player_name: "Matthew Stafford", multiplier: 4 },
-  { entrant: "Dusty", player_id: "19", player_name: "Matthew Stafford", multiplier: 4 },
-  { entrant: "Chris", player_id: "19", player_name: "Matthew Stafford", multiplier: 2 },
-  { entrant: "Mach", player_id: "21", player_name: "Drake Maye", multiplier: 4 },
-  { entrant: "Vobenomic$", player_id: "21", player_name: "Drake Maye", multiplier: 4 },
-  { entrant: "Chris", player_id: "21", player_name: "Drake Maye", multiplier: 2 },
-  { entrant: "Dusty", player_id: "21", player_name: "Drake Maye", multiplier: 1 },
-  { entrant: "Nate", player_id: "2", player_name: "Puka Nacua", multiplier: 4 },
-  { entrant: "Cody Conners", player_id: "2", player_name: "Puka Nacua", multiplier: 4 },
-  { entrant: "Chris", player_id: "2", player_name: "Puka Nacua", multiplier: 4 },
-  { entrant: "Mach", player_id: "2", player_name: "Puka Nacua", multiplier: 2 },
-  { entrant: "Dusty", player_id: "2", player_name: "Puka Nacua", multiplier: 2 },
-  { entrant: "Cody Conners", player_id: "23", player_name: "Courtland Sutton", multiplier: 4 },
-  { entrant: "Chris", player_id: "9", player_name: "RJ Harvey", multiplier: 4 },
-  { entrant: "Mach", player_id: "9", player_name: "RJ Harvey", multiplier: 4 },
-  { entrant: "Vobenomic$", player_id: "9", player_name: "RJ Harvey", multiplier: 4 },
-  { entrant: "Dusty", player_id: "9", player_name: "RJ Harvey", multiplier: 4 },
-  { entrant: "Nate", player_id: "16", player_name: "Stefon Diggs", multiplier: 4 },
-  { entrant: "Chris", player_id: "60", player_name: "Hunter Henry", multiplier: 4 },
-  { entrant: "Vobenomic$", player_id: "4", player_name: "Kyren Williams", multiplier: 2 },
-  { entrant: "Dusty", player_id: "8", player_name: "TreVeyon Henderson", multiplier: 4 },
-  { entrant: "Cody Conners", player_id: "117", player_name: "Austin Hooper", multiplier: 4 },
-  { entrant: "Cody Conners", player_id: "40", player_name: "Bo Nix", multiplier: 4 },
-  { entrant: "Nate", player_id: "40", player_name: "Bo Nix", multiplier: 4 },
+  { entrant: "Chris", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", multiplier: 4 },
+  { entrant: "Chris", player_id: "60", player_name: "Hunter Henry", team_abbr: "NE", multiplier: 8 },
+  { entrant: "Cody Conners", player_id: "117", player_name: "Austin Hooper", team_abbr: "NE", multiplier: 8 },
+  { entrant: "Dusty", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", multiplier: 2 },
+  { entrant: "Dusty", player_id: "8", player_name: "TreVeyon Henderson", team_abbr: "NE", multiplier: 8 },
+  { entrant: "Mach", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", multiplier: 8 },
+  { entrant: "Nate", player_id: "16", player_name: "Stefon Diggs", team_abbr: "NE", multiplier: 8 },
+  { entrant: "Vobenomic$", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", multiplier: 8 },
+  { entrant: "Chris", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", multiplier: 8 },
+  { entrant: "Cody Conners", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", multiplier: 8 },
+  { entrant: "Dusty", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", multiplier: 8 },
+  { entrant: "Mach", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", multiplier: 8 },
+  { entrant: "Nate", player_id: "53", player_name: "Sam Darnold", team_abbr: "SEA", multiplier: 8 },
+  { entrant: "Nate", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", multiplier: 4 },
+  { entrant: "Vobenomic$", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", multiplier: 8 },
 ];
 
 const ENTRANT_ORDER = ["Cody Conners", "Chris", "Mach", "Vobenomic$", "Dusty", "Nate"];
@@ -39,6 +21,7 @@ const ENTRANT_ORDER = ["Cody Conners", "Chris", "Mach", "Vobenomic$", "Dusty", "
 type PlayerPick = {
   player_id: string;
   player_name: string;
+  team_abbr: string;
   multiplier: number;
 };
 
@@ -53,6 +36,7 @@ function buildEntrantMap(entries: typeof ENTRIES) {
     list.push({
       player_id: entry.player_id,
       player_name: entry.player_name,
+      team_abbr: entry.team_abbr,
       multiplier: entry.multiplier,
     });
     map.set(entry.entrant, list);
@@ -84,17 +68,35 @@ function overlapCount(a: Set<string>, b: Set<string>) {
 }
 
 function buildPlayerMatrix(entries: typeof ENTRIES) {
-  const map = new Map<string, { player_id: string; player_name: string; byEntrant: Map<string, number> }>();
+  const map = new Map<
+    string,
+    { player_id: string; player_name: string; team_abbr: string; byEntrant: Map<string, number> }
+  >();
   for (const entry of entries) {
     const existing = map.get(entry.player_id) ?? {
       player_id: entry.player_id,
       player_name: entry.player_name,
+      team_abbr: entry.team_abbr,
       byEntrant: new Map<string, number>(),
     };
     existing.byEntrant.set(entry.entrant, entry.multiplier);
     map.set(entry.player_id, existing);
   }
   return map;
+}
+
+function buildTeamExposure(entries: typeof ENTRIES, entrants: string[]) {
+  const map = new Map<string, { entrant: string; NE: number; SEA: number }>();
+  for (const entrant of entrants) {
+    map.set(entrant, { entrant, NE: 0, SEA: 0 });
+  }
+  for (const entry of entries) {
+    const record = map.get(entry.entrant);
+    if (!record) continue;
+    if (entry.team_abbr === "NE") record.NE += entry.multiplier;
+    if (entry.team_abbr === "SEA") record.SEA += entry.multiplier;
+  }
+  return Array.from(map.values());
 }
 
 export default function AnalysisPage() {
@@ -128,6 +130,7 @@ export default function AnalysisPage() {
     if (countA !== countB) return countB - countA;
     return a.player_name.localeCompare(b.player_name);
   });
+  const teamExposure = buildTeamExposure(ENTRIES, entrants);
 
   return (
     <main className="min-h-screen text-text">
@@ -135,15 +138,54 @@ export default function AnalysisPage() {
         <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.25),transparent_70%)]" />
         <div className="pointer-events-none absolute -left-10 -bottom-16 h-40 w-40 rounded-full bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.2),transparent_70%)]" />
 
-        <p className="text-xs uppercase tracking-[0.3em] text-muted">Round 3 Snapshot</p>
+        <p className="text-xs uppercase tracking-[0.3em] text-muted">Super Bowl Snapshot</p>
         <h1 className="mt-2 text-3xl font-semibold text-[#F8FAFC] [font-family:'Garamond']">
           Overlap and Leverage
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Manual summary based on the remaining player pool you shared. Use this
-          to spot chalk vs. unique edges.
+          Two teams left. This view highlights multipliers and overlap so you can
+          see who needs NE vs SEA to pop.
         </p>
       </div>
+
+      <section className="mt-6 rounded-3xl border border-border bg-surface/80 p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-[#F8FAFC] [font-family:'Garamond']">
+            Team Exposure
+          </h2>
+          <span className="text-xs text-muted">total multiplier by team</span>
+        </div>
+
+        <div className="overflow-auto">
+          <table className="w-full min-w-[420px] text-left text-sm">
+            <thead className="text-xs uppercase tracking-wide text-muted">
+              <tr>
+                <th className="pb-3 pr-4">Entrant</th>
+                <th className="pb-3 pr-4 text-right">NE</th>
+                <th className="pb-3 pr-4 text-right">SEA</th>
+                <th className="pb-3 pr-4 text-right">Edge</th>
+              </tr>
+            </thead>
+            <tbody>
+              {teamExposure.map((row) => {
+                const edge = row.NE - row.SEA;
+                return (
+                  <tr key={row.entrant} className="border-t border-border/60">
+                    <td className="py-3 pr-4 font-semibold">{row.entrant}</td>
+                    <td className="py-3 pr-4 text-right">{row.NE}x</td>
+                    <td className="py-3 pr-4 text-right">{row.SEA}x</td>
+                    <td className="py-3 pr-4 text-right">
+                      <span className="text-xs text-muted">
+                        {edge === 0 ? "Even" : edge > 0 ? `+${edge} NE` : `${edge} SEA`}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <section className="mt-6 rounded-3xl border border-border bg-surface/80 p-5">
         <div className="mb-4 flex items-center justify-between">
@@ -213,7 +255,10 @@ export default function AnalysisPage() {
             <tbody>
               {playersSorted.map((player) => (
                 <tr key={player.player_id} className="border-t border-border/60">
-                  <td className="py-3 pr-4 font-semibold">{player.player_name}</td>
+                  <td className="py-3 pr-4 font-semibold">
+                    {player.player_name}
+                    <span className="ml-2 text-xs text-muted">{player.team_abbr}</span>
+                  </td>
                   {entrants.map((entrant) => {
                     const mult = player.byEntrant.get(entrant);
                     return (

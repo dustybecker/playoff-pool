@@ -140,3 +140,15 @@ export default function LeaderboardPage() {
                         <td className="px-3 py-3 text-right font-semibold">
                           {total.toFixed(1)}
                         </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </main>
+  );
+}

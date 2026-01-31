@@ -16,6 +16,33 @@ const ENTRIES = [
   { entrant: "Vobenomic$", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", multiplier: 8 },
 ];
 
+const CURRENT_TOTALS = [
+  { entrant: "Nate", total: 771.6 },
+  { entrant: "Mach", total: 752.9 },
+  { entrant: "Chris", total: 746.7 },
+  { entrant: "Dusty", total: 741.8 },
+  { entrant: "Vobenomic$", total: 729.2 },
+  { entrant: "Cody Conners", total: 722.5 },
+];
+
+const PROJECTIONS = [
+  { entrant: "Chris", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", points: 70.84, multiplier: 4 },
+  { entrant: "Chris", player_id: "60", player_name: "Hunter Henry", team_abbr: "NE", points: 56.4, multiplier: 8 },
+  { entrant: "Chris", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", points: 128.4, multiplier: 8 },
+  { entrant: "Cody Conners", player_id: "117", player_name: "Austin Hooper", team_abbr: "NE", points: 20.4, multiplier: 8 },
+  { entrant: "Cody Conners", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", points: 128.4, multiplier: 8 },
+  { entrant: "Dusty", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", points: 35.42, multiplier: 2 },
+  { entrant: "Dusty", player_id: "8", player_name: "TreVeyon Henderson", team_abbr: "NE", points: 16.8, multiplier: 8 },
+  { entrant: "Dusty", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", points: 128.4, multiplier: 8 },
+  { entrant: "Mach", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", points: 141.68, multiplier: 8 },
+  { entrant: "Mach", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", points: 128.4, multiplier: 8 },
+  { entrant: "Nate", player_id: "16", player_name: "Stefon Diggs", team_abbr: "NE", points: 68.4, multiplier: 8 },
+  { entrant: "Nate", player_id: "53", player_name: "Sam Darnold", team_abbr: "SEA", points: 118.16, multiplier: 8 },
+  { entrant: "Nate", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", points: 64.2, multiplier: 4 },
+  { entrant: "Vobenomic$", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", points: 141.68, multiplier: 8 },
+  { entrant: "Vobenomic$", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", points: 128.4, multiplier: 8 },
+];
+
 const ENTRANT_ORDER = ["Cody Conners", "Chris", "Mach", "Vobenomic$", "Dusty", "Nate"];
 
 type PlayerPick = {
@@ -99,12 +126,26 @@ function buildTeamExposure(entries: typeof ENTRIES, entrants: string[]) {
   return Array.from(map.values());
 }
 
+function buildProjectedTotals(entries: typeof PROJECTIONS, entrants: string[]) {
+  const map = new Map<string, { entrant: string; projected: number }>();
+  for (const entrant of entrants) {
+    map.set(entrant, { entrant, projected: 0 });
+  }
+  for (const entry of entries) {
+    const record = map.get(entry.entrant);
+    if (!record) continue;
+    record.projected += entry.points;
+  }
+  return Array.from(map.values());
+}
+
 export default function AnalysisPage() {
   const entrants = uniqueEntrants(ENTRIES);
   const entrantMap = buildEntrantMap(ENTRIES);
   const playerCounts = buildPlayerCounts(ENTRIES);
   const entrantSets = new Map<string, Set<string>>();
   const playerMatrix = buildPlayerMatrix(ENTRIES);
+  const currentTotals = new Map(CURRENT_TOTALS.map((row) => [row.entrant, row.total]));
 
   for (const entrant of entrants) {
     const picks = entrantMap.get(entrant) ?? [];
@@ -131,6 +172,16 @@ export default function AnalysisPage() {
     return a.player_name.localeCompare(b.player_name);
   });
   const teamExposure = buildTeamExposure(ENTRIES, entrants);
+  const projectedTotals = buildProjectedTotals(PROJECTIONS, entrants);
+  const projectedFinals = projectedTotals.map((row) => {
+    const current = currentTotals.get(row.entrant) ?? 0;
+    const total = current + row.projected;
+    return { entrant: row.entrant, current, projected: row.projected, total };
+  });
+  const projectedLeader = projectedFinals.reduce((acc, row) => {
+    if (!acc || row.total > acc.total) return row;
+    return acc;
+  }, null as null | { entrant: string; current: number; projected: number; total: number });
 
   return (
     <main className="min-h-screen text-text">
@@ -147,6 +198,50 @@ export default function AnalysisPage() {
           see who needs NE vs SEA to pop.
         </p>
       </div>
+
+      <section className="mt-6 rounded-3xl border border-border bg-surface/80 p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-[#F8FAFC] [font-family:'Garamond']">
+            Projected Win Paths
+          </h2>
+          <span className="text-xs text-muted">current totals + SB projections</span>
+        </div>
+
+        <div className="overflow-auto">
+          <table className="w-full min-w-[560px] text-left text-sm">
+            <thead className="text-xs uppercase tracking-wide text-muted">
+              <tr>
+                <th className="pb-3 pr-4">Entrant</th>
+                <th className="pb-3 pr-4 text-right">Current</th>
+                <th className="pb-3 pr-4 text-right">SB Proj</th>
+                <th className="pb-3 pr-4 text-right">Proj Total</th>
+                <th className="pb-3 pr-4 text-right">Needs</th>
+              </tr>
+            </thead>
+            <tbody>
+              {projectedFinals.map((row) => {
+                const leaderTotal = projectedLeader?.total ?? 0;
+                const needed = Math.max(0, leaderTotal - row.total + 0.1);
+                return (
+                  <tr key={row.entrant} className="border-t border-border/60">
+                    <td className="py-3 pr-4 font-semibold">{row.entrant}</td>
+                    <td className="py-3 pr-4 text-right">{row.current.toFixed(1)}</td>
+                    <td className="py-3 pr-4 text-right">{row.projected.toFixed(1)}</td>
+                    <td className="py-3 pr-4 text-right font-semibold">{row.total.toFixed(1)}</td>
+                    <td className="py-3 pr-4 text-right">
+                      <span className="text-xs text-muted">
+                        {projectedLeader?.entrant === row.entrant
+                          ? "Leader"
+                          : `+${needed.toFixed(1)} pts`}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <section className="mt-6 rounded-3xl border border-border bg-surface/80 p-5">
         <div className="mb-4 flex items-center justify-between">
@@ -330,6 +425,17 @@ export default function AnalysisPage() {
               {pick.player_name}
             </span>
           ))}
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-3xl border border-border bg-surface/80 p-5">
+        <h2 className="text-lg font-semibold text-[#F8FAFC] [font-family:'Garamond']">
+          Scoring Quick Rules
+        </h2>
+        <div className="mt-3 grid gap-2 text-xs text-muted">
+          <div>Passing: 4 pts per TD, 1 pt per 25 passing yards.</div>
+          <div>Rushing/Receiving: 6 pts per TD, 1 pt per 10 yards.</div>
+          <div>Receiving: 1 pt per reception.</div>
         </div>
       </section>
     </main>

@@ -1,443 +1,193 @@
-const ENTRIES = [
-  { entrant: "Chris", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", multiplier: 4 },
-  { entrant: "Chris", player_id: "60", player_name: "Hunter Henry", team_abbr: "NE", multiplier: 8 },
-  { entrant: "Cody Conners", player_id: "117", player_name: "Austin Hooper", team_abbr: "NE", multiplier: 8 },
-  { entrant: "Dusty", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", multiplier: 2 },
-  { entrant: "Dusty", player_id: "8", player_name: "TreVeyon Henderson", team_abbr: "NE", multiplier: 8 },
-  { entrant: "Mach", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", multiplier: 8 },
-  { entrant: "Nate", player_id: "16", player_name: "Stefon Diggs", team_abbr: "NE", multiplier: 8 },
-  { entrant: "Vobenomic$", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", multiplier: 8 },
-  { entrant: "Chris", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", multiplier: 8 },
-  { entrant: "Cody Conners", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", multiplier: 8 },
-  { entrant: "Dusty", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", multiplier: 8 },
-  { entrant: "Mach", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", multiplier: 8 },
-  { entrant: "Nate", player_id: "53", player_name: "Sam Darnold", team_abbr: "SEA", multiplier: 8 },
-  { entrant: "Nate", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", multiplier: 4 },
-  { entrant: "Vobenomic$", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", multiplier: 8 },
-];
+"use client";
 
-const CURRENT_TOTALS = [
-  { entrant: "Nate", total: 771.6 },
-  { entrant: "Mach", total: 752.9 },
-  { entrant: "Chris", total: 746.7 },
-  { entrant: "Dusty", total: 741.8 },
-  { entrant: "Vobenomic$", total: 729.2 },
-  { entrant: "Cody Conners", total: 722.5 },
-];
+import { useEffect, useMemo, useState } from "react";
 
-const PROJECTIONS = [
-  { entrant: "Chris", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", points: 70.84, multiplier: 4 },
-  { entrant: "Chris", player_id: "60", player_name: "Hunter Henry", team_abbr: "NE", points: 56.4, multiplier: 8 },
-  { entrant: "Chris", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", points: 128.4, multiplier: 8 },
-  { entrant: "Cody Conners", player_id: "117", player_name: "Austin Hooper", team_abbr: "NE", points: 20.4, multiplier: 8 },
-  { entrant: "Cody Conners", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", points: 128.4, multiplier: 8 },
-  { entrant: "Dusty", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", points: 35.42, multiplier: 2 },
-  { entrant: "Dusty", player_id: "8", player_name: "TreVeyon Henderson", team_abbr: "NE", points: 16.8, multiplier: 8 },
-  { entrant: "Dusty", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", points: 128.4, multiplier: 8 },
-  { entrant: "Mach", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", points: 141.68, multiplier: 8 },
-  { entrant: "Mach", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", points: 128.4, multiplier: 8 },
-  { entrant: "Nate", player_id: "16", player_name: "Stefon Diggs", team_abbr: "NE", points: 68.4, multiplier: 8 },
-  { entrant: "Nate", player_id: "53", player_name: "Sam Darnold", team_abbr: "SEA", points: 118.16, multiplier: 8 },
-  { entrant: "Nate", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", points: 64.2, multiplier: 4 },
-  { entrant: "Vobenomic$", player_id: "21", player_name: "Drake Maye", team_abbr: "NE", points: 141.68, multiplier: 8 },
-  { entrant: "Vobenomic$", player_id: "7", player_name: "Jaxon Smith-Njigba", team_abbr: "SEA", points: 128.4, multiplier: 8 },
-];
-
-const ENTRANT_ORDER = ["Cody Conners", "Chris", "Mach", "Vobenomic$", "Dusty", "Nate"];
-
-type PlayerPick = {
+type BreakdownRow = {
+  entrant_name: string;
+  round: number;
+  slot_id: string;
   player_id: string;
   player_name: string;
-  team_abbr: string;
-  multiplier: number;
+  pos: string;
+  team_abbr: string | null;
+  points: number;
 };
 
-function uniqueEntrants(entries: typeof ENTRIES) {
-  return ENTRANT_ORDER.filter((name) => entries.some((entry) => entry.entrant === name));
-}
+type RoundGroup = {
+  round: number;
+  rows: BreakdownRow[];
+  total: number;
+};
 
-function buildEntrantMap(entries: typeof ENTRIES) {
-  const map = new Map<string, PlayerPick[]>();
-  for (const entry of entries) {
-    const list = map.get(entry.entrant) ?? [];
-    list.push({
-      player_id: entry.player_id,
-      player_name: entry.player_name,
-      team_abbr: entry.team_abbr,
-      multiplier: entry.multiplier,
-    });
-    map.set(entry.entrant, list);
-  }
-  return map;
-}
+type EntrantGroup = {
+  entrant_name: string;
+  rounds: RoundGroup[];
+  total: number;
+};
 
-function buildPlayerCounts(entries: typeof ENTRIES) {
-  const counts = new Map<string, number>();
-  const seenByEntrant = new Map<string, Set<string>>();
-
-  for (const entry of entries) {
-    const seen = seenByEntrant.get(entry.entrant) ?? new Set<string>();
-    if (!seen.has(entry.player_id)) {
-      counts.set(entry.player_id, (counts.get(entry.player_id) ?? 0) + 1);
-      seen.add(entry.player_id);
-      seenByEntrant.set(entry.entrant, seen);
-    }
-  }
-  return counts;
-}
-
-function overlapCount(a: Set<string>, b: Set<string>) {
-  let count = 0;
-  for (const id of a) {
-    if (b.has(id)) count += 1;
-  }
-  return count;
-}
-
-function buildPlayerMatrix(entries: typeof ENTRIES) {
-  const map = new Map<
-    string,
-    { player_id: string; player_name: string; team_abbr: string; byEntrant: Map<string, number> }
-  >();
-  for (const entry of entries) {
-    const existing = map.get(entry.player_id) ?? {
-      player_id: entry.player_id,
-      player_name: entry.player_name,
-      team_abbr: entry.team_abbr,
-      byEntrant: new Map<string, number>(),
-    };
-    existing.byEntrant.set(entry.entrant, entry.multiplier);
-    map.set(entry.player_id, existing);
-  }
-  return map;
-}
-
-function buildTeamExposure(entries: typeof ENTRIES, entrants: string[]) {
-  const map = new Map<string, { entrant: string; NE: number; SEA: number }>();
-  for (const entrant of entrants) {
-    map.set(entrant, { entrant, NE: 0, SEA: 0 });
-  }
-  for (const entry of entries) {
-    const record = map.get(entry.entrant);
-    if (!record) continue;
-    if (entry.team_abbr === "NE") record.NE += entry.multiplier;
-    if (entry.team_abbr === "SEA") record.SEA += entry.multiplier;
-  }
-  return Array.from(map.values());
-}
-
-function buildProjectedTotals(entries: typeof PROJECTIONS, entrants: string[]) {
-  const map = new Map<string, { entrant: string; projected: number }>();
-  for (const entrant of entrants) {
-    map.set(entrant, { entrant, projected: 0 });
-  }
-  for (const entry of entries) {
-    const record = map.get(entry.entrant);
-    if (!record) continue;
-    record.projected += entry.points;
-  }
-  return Array.from(map.values());
+function safePoints(value: number) {
+  return Number.isFinite(value) ? value : 0;
 }
 
 export default function AnalysisPage() {
-  const entrants = uniqueEntrants(ENTRIES);
-  const entrantMap = buildEntrantMap(ENTRIES);
-  const playerCounts = buildPlayerCounts(ENTRIES);
-  const entrantSets = new Map<string, Set<string>>();
-  const playerMatrix = buildPlayerMatrix(ENTRIES);
-  const currentTotals = new Map(CURRENT_TOTALS.map((row) => [row.entrant, row.total]));
+  const poolId = process.env.NEXT_PUBLIC_POOL_ID || "2026-playoffs";
+  const [rows, setRows] = useState<BreakdownRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  for (const entrant of entrants) {
-    const picks = entrantMap.get(entrant) ?? [];
-    entrantSets.set(entrant, new Set(picks.map((pick) => pick.player_id)));
-  }
+  useEffect(() => {
+    let cancelled = false;
 
-  const uniqueByEntrant = entrants.map((entrant) => {
-    const picks = entrantMap.get(entrant) ?? [];
-    const uniques = picks.filter((pick) => (playerCounts.get(pick.player_id) ?? 0) === 1);
-    return { entrant, uniques };
-  });
+    async function load() {
+      setLoading(true);
+      setError(null);
 
-  const lowOwned = entrants
-    .flatMap((entrant) => entrantMap.get(entrant) ?? [])
-    .filter((pick, index, all) => {
-      if ((playerCounts.get(pick.player_id) ?? 0) !== 2) return false;
-      return all.findIndex((item) => item.player_id === pick.player_id) === index;
-    });
+      try {
+        const res = await fetch(
+          `/api/scoring-breakdown?pool_id=${encodeURIComponent(poolId)}`
+        );
+        const text = await res.text();
 
-  const playersSorted = Array.from(playerMatrix.values()).sort((a, b) => {
-    const countA = playerCounts.get(a.player_id) ?? 0;
-    const countB = playerCounts.get(b.player_id) ?? 0;
-    if (countA !== countB) return countB - countA;
-    return a.player_name.localeCompare(b.player_name);
-  });
-  const teamExposure = buildTeamExposure(ENTRIES, entrants);
-  const projectedTotals = buildProjectedTotals(PROJECTIONS, entrants);
-  const projectedFinals = projectedTotals.map((row) => {
-    const current = currentTotals.get(row.entrant) ?? 0;
-    const total = current + row.projected;
-    return { entrant: row.entrant, current, projected: row.projected, total };
-  });
-  const projectedLeader = projectedFinals.reduce((acc, row) => {
-    if (!acc || row.total > acc.total) return row;
-    return acc;
-  }, null as null | { entrant: string; current: number; projected: number; total: number });
+        let json: any;
+        try {
+          json = JSON.parse(text);
+        } catch {
+          throw new Error(
+            `Scoring breakdown API did not return JSON. First 200 chars:\n${text.slice(
+              0,
+              200
+            )}`
+          );
+        }
+
+        if (!res.ok) throw new Error(json?.error || "Failed to load scoring breakdown");
+        if (!cancelled) setRows(json.rows || []);
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || "Unknown error");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [poolId]);
+
+  const entrants = useMemo<EntrantGroup[]>(() => {
+    const byEntrant = new Map<string, Map<number, BreakdownRow[]>>();
+
+    for (const row of rows) {
+      const rounds = byEntrant.get(row.entrant_name) ?? new Map<number, BreakdownRow[]>();
+      const roundRows = rounds.get(row.round) ?? [];
+      roundRows.push(row);
+      rounds.set(row.round, roundRows);
+      byEntrant.set(row.entrant_name, rounds);
+    }
+
+    const groups: EntrantGroup[] = [];
+    for (const [entrantName, roundsMap] of byEntrant.entries()) {
+      const rounds: RoundGroup[] = Array.from(roundsMap.entries())
+        .sort((a, b) => a[0] - b[0])
+        .map(([round, roundRows]) => {
+          const total = roundRows.reduce((sum, row) => sum + safePoints(row.points), 0);
+          return { round, rows: roundRows, total };
+        });
+
+      const total = rounds.reduce((sum, round) => sum + round.total, 0);
+      groups.push({
+        entrant_name: entrantName,
+        rounds,
+        total,
+      });
+    }
+
+    return groups.sort((a, b) => b.total - a.total);
+  }, [rows]);
 
   return (
-    <main className="min-h-screen text-text">
-      <div className="relative overflow-hidden rounded-3xl border border-border bg-surface/80 p-5">
-        <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.25),transparent_70%)]" />
-        <div className="pointer-events-none absolute -left-10 -bottom-16 h-40 w-40 rounded-full bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.2),transparent_70%)]" />
-
-        <p className="text-xs uppercase tracking-[0.3em] text-muted">Super Bowl Snapshot</p>
-        <h1 className="mt-2 text-3xl font-semibold text-[#F8FAFC] [font-family:'Garamond']">
-          Overlap and Leverage
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          Two teams left. This view highlights multipliers and overlap so you can
-          see who needs NE vs SEA to pop.
+    <main className="pb-24">
+      <div className="mb-4">
+        <h1 className="text-xl font-semibold">Final Scoring Breakdown</h1>
+        <p className="mt-1 text-sm text-muted">
+          Entrant, round, player, and points from <span className="font-semibold">entry_round_lineups</span>.
         </p>
       </div>
 
-      <section className="mt-6 rounded-3xl border border-border bg-surface/80 p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[#F8FAFC] [font-family:'Garamond']">
-            Projected Win Paths
-          </h2>
-          <span className="text-xs text-muted">current totals + SB projections</span>
+      {loading && (
+        <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+          Loading scoring breakdown...
         </div>
+      )}
 
-        <div className="overflow-auto">
-          <table className="w-full min-w-[560px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="pb-3 pr-4">Entrant</th>
-                <th className="pb-3 pr-4 text-right">Current</th>
-                <th className="pb-3 pr-4 text-right">SB Proj</th>
-                <th className="pb-3 pr-4 text-right">Proj Total</th>
-                <th className="pb-3 pr-4 text-right">Needs</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projectedFinals.map((row) => {
-                const leaderTotal = projectedLeader?.total ?? 0;
-                const needed = Math.max(0, leaderTotal - row.total + 0.1);
-                return (
-                  <tr key={row.entrant} className="border-t border-border/60">
-                    <td className="py-3 pr-4 font-semibold">{row.entrant}</td>
-                    <td className="py-3 pr-4 text-right">{row.current.toFixed(1)}</td>
-                    <td className="py-3 pr-4 text-right">{row.projected.toFixed(1)}</td>
-                    <td className="py-3 pr-4 text-right font-semibold">{row.total.toFixed(1)}</td>
-                    <td className="py-3 pr-4 text-right">
-                      <span className="text-xs text-muted">
-                        {projectedLeader?.entrant === row.entrant
-                          ? "Leader"
-                          : `+${needed.toFixed(1)} pts`}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {error && (
+        <div className="rounded-lg border border-danger/40 bg-surface p-4 text-sm text-danger">
+          {error}
         </div>
-      </section>
+      )}
 
-      <section className="mt-6 rounded-3xl border border-border bg-surface/80 p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[#F8FAFC] [font-family:'Garamond']">
-            Team Exposure
-          </h2>
-          <span className="text-xs text-muted">total multiplier by team</span>
+      {!loading && !error && entrants.length === 0 && (
+        <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+          No scoring rows found.
         </div>
+      )}
 
-        <div className="overflow-auto">
-          <table className="w-full min-w-[420px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="pb-3 pr-4">Entrant</th>
-                <th className="pb-3 pr-4 text-right">NE</th>
-                <th className="pb-3 pr-4 text-right">SEA</th>
-                <th className="pb-3 pr-4 text-right">Edge</th>
-              </tr>
-            </thead>
-            <tbody>
-              {teamExposure.map((row) => {
-                const edge = row.NE - row.SEA;
-                return (
-                  <tr key={row.entrant} className="border-t border-border/60">
-                    <td className="py-3 pr-4 font-semibold">{row.entrant}</td>
-                    <td className="py-3 pr-4 text-right">{row.NE}x</td>
-                    <td className="py-3 pr-4 text-right">{row.SEA}x</td>
-                    <td className="py-3 pr-4 text-right">
-                      <span className="text-xs text-muted">
-                        {edge === 0 ? "Even" : edge > 0 ? `+${edge} NE` : `${edge} SEA`}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="mt-6 rounded-3xl border border-border bg-surface/80 p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[#F8FAFC] [font-family:'Garamond']">
-            Overlap Heatmap
-          </h2>
-          <span className="text-xs text-muted">shared player counts</span>
-        </div>
-
-        <div className="overflow-auto">
-          <table className="w-full min-w-[500px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="pb-3 pr-4">Entrant</th>
-                {entrants.map((entrant) => (
-                  <th key={entrant} className="pb-3 pr-4 text-right">
-                    {entrant.split(" ")[0]}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {entrants.map((rowEntrant) => {
-                const rowSet = entrantSets.get(rowEntrant) ?? new Set<string>();
-                return (
-                  <tr key={rowEntrant} className="border-t border-border/60">
-                    <td className="py-3 pr-4 font-semibold">{rowEntrant}</td>
-                    {entrants.map((colEntrant) => {
-                      const colSet = entrantSets.get(colEntrant) ?? new Set<string>();
-                      const count = overlapCount(rowSet, colSet);
-                      return (
-                        <td key={`${rowEntrant}-${colEntrant}`} className="py-3 pr-4 text-right">
-                          <span className="inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-border/60 px-2 py-1 text-xs font-semibold">
-                            {count}
-                          </span>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="mt-6 rounded-3xl border border-border bg-surface/80 p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[#F8FAFC] [font-family:'Garamond']">
-            Player Overlap Matrix
-          </h2>
-          <span className="text-xs text-muted">multiplier by entrant</span>
-        </div>
-
-        <div className="overflow-auto">
-          <table className="w-full min-w-[560px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="pb-3 pr-4">Player</th>
-                {entrants.map((entrant) => (
-                  <th key={entrant} className="pb-3 pr-4 text-right">
-                    {entrant.split(" ")[0]}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {playersSorted.map((player) => (
-                <tr key={player.player_id} className="border-t border-border/60">
-                  <td className="py-3 pr-4 font-semibold">
-                    {player.player_name}
-                    <span className="ml-2 text-xs text-muted">{player.team_abbr}</span>
-                  </td>
-                  {entrants.map((entrant) => {
-                    const mult = player.byEntrant.get(entrant);
-                    return (
-                      <td key={`${player.player_id}-${entrant}`} className="py-3 pr-4 text-right">
-                        {mult ? (
-                          <span className="inline-flex min-w-[2.25rem] items-center justify-center rounded-full bg-border/60 px-2 py-1 text-xs font-semibold">
-                            {mult}x
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted">-</span>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="mt-6 rounded-3xl border border-border bg-surface/80 p-5">
-        <h2 className="text-lg font-semibold text-[#F8FAFC] [font-family:'Garamond']">
-          Unique Leverage
-        </h2>
-        <p className="mt-1 text-xs text-muted">
-          Players only owned by a single entrant. These are true swing pieces.
-        </p>
-
-        <div className="mt-4 grid gap-3">
-          {uniqueByEntrant.map(({ entrant, uniques }) => (
-            <div
-              key={entrant}
-              className="rounded-2xl border border-border/70 bg-bg/50 p-4"
+      {!loading && !error && entrants.length > 0 && (
+        <div className="space-y-5">
+          {entrants.map((entrant, entrantIndex) => (
+            <section
+              key={entrant.entrant_name}
+              className="overflow-hidden rounded-xl border border-border bg-surface"
             >
-              <div className="text-sm font-semibold">{entrant}</div>
-              {uniques.length === 0 ? (
-                <div className="mt-2 text-xs text-muted">No unique players.</div>
-              ) : (
-                <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                  {uniques.map((pick) => (
-                    <span
-                      key={`${entrant}-${pick.player_id}`}
-                      className="rounded-full border border-border/70 bg-surface px-3 py-1 font-semibold"
-                    >
-                      {pick.player_name} {pick.multiplier}x
-                    </span>
-                  ))}
+              <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                <div className="text-sm font-semibold">
+                  {entrantIndex + 1}. {entrant.entrant_name}
                 </div>
-              )}
-            </div>
+                <div className="text-sm font-semibold">{entrant.total.toFixed(1)}</div>
+              </div>
+
+              <div className="space-y-4 p-3">
+                {entrant.rounds.map((round) => (
+                  <div key={`${entrant.entrant_name}-round-${round.round}`}>
+                    <div className="mb-2 flex items-center justify-between text-xs text-muted">
+                      <span className="font-semibold">Round {round.round}</span>
+                      <span>{round.total.toFixed(1)} pts</span>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-lg border border-border/70">
+                      <table className="w-full min-w-[560px] text-sm">
+                        <thead className="border-b border-border text-xs uppercase tracking-wide text-muted">
+                          <tr>
+                            <th className="px-3 py-2 text-left">Slot</th>
+                            <th className="px-3 py-2 text-left">Player</th>
+                            <th className="px-3 py-2 text-left">Pos</th>
+                            <th className="px-3 py-2 text-left">Team</th>
+                            <th className="px-3 py-2 text-right">Points</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/60">
+                          {round.rows.map((row) => (
+                            <tr key={`${entrant.entrant_name}-${row.round}-${row.slot_id}-${row.player_id}`}>
+                              <td className="px-3 py-2">{row.slot_id}</td>
+                              <td className="px-3 py-2 font-medium">{row.player_name}</td>
+                              <td className="px-3 py-2">{row.pos}</td>
+                              <td className="px-3 py-2">{row.team_abbr ?? "-"}</td>
+                              <td className="px-3 py-2 text-right font-semibold">
+                                {safePoints(row.points).toFixed(1)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
-      </section>
-
-      <section className="mt-6 rounded-3xl border border-border bg-surface/80 p-5">
-        <h2 className="text-lg font-semibold text-[#F8FAFC] [font-family:'Garamond']">
-          Low-Owned Watch
-        </h2>
-        <p className="mt-1 text-xs text-muted">
-          Players owned by only two entrants. These are secondary levers.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2 text-xs">
-          {lowOwned.map((pick) => (
-            <span
-              key={`low-${pick.player_id}`}
-              className="rounded-full border border-border/70 bg-bg/60 px-3 py-1 font-semibold"
-            >
-              {pick.player_name}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-6 rounded-3xl border border-border bg-surface/80 p-5">
-        <h2 className="text-lg font-semibold text-[#F8FAFC] [font-family:'Garamond']">
-          Scoring Quick Rules
-        </h2>
-        <div className="mt-3 grid gap-2 text-xs text-muted">
-          <div>Passing: 4 pts per TD, 1 pt per 25 passing yards.</div>
-          <div>Rushing/Receiving: 6 pts per TD, 1 pt per 10 yards.</div>
-          <div>Receiving: 1 pt per reception.</div>
-        </div>
-      </section>
+      )}
     </main>
   );
 }

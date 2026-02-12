@@ -1,0 +1,52 @@
+diff --git a/C:\Users\dusty\playoff-pool-main\app\api\scoring-breakdown\route.ts b/C:\Users\dusty\playoff-pool-main\app\api\scoring-breakdown\route.ts
+new file mode 100644
+--- /dev/null
++++ b/C:\Users\dusty\playoff-pool-main\app\api\scoring-breakdown\route.ts
+@@ -0,0 +1,47 @@
++import { NextResponse } from "next/server";
++import { supabaseAdmin } from "@/lib/supabase";
++
++type BreakdownRow = {
++  entrant_name: string;
++  round: number;
++  slot_id: string;
++  player_id: string;
++  player_name: string;
++  pos: string;
++  team_abbr: string | null;
++  points: number;
++};
++
++export async function GET(req: Request) {
++  const url = new URL(req.url);
++  const poolId =
++    url.searchParams.get("pool_id") ||
++    process.env.POOL_ID ||
++    "2026-playoffs";
++
++  const { data, error } = await supabaseAdmin
++    .from("entry_round_lineups")
++    .select("entrant_name, round, slot_id, player_id, player_name, pos, team_abbr, points")
++    .eq("pool_id", poolId)
++    .order("entrant_name", { ascending: true })
++    .order("round", { ascending: true })
++    .order("slot_id", { ascending: true });
++
++  if (error) {
++    return NextResponse.json({ error: error.message }, { status: 500 });
++  }
++
++  const rows: BreakdownRow[] =
++    data?.map((row) => ({
++      entrant_name: row.entrant_name,
++      round: Number(row.round ?? 0),
++      slot_id: row.slot_id,
++      player_id: row.player_id,
++      player_name: row.player_name,
++      pos: row.pos,
++      team_abbr: row.team_abbr,
++      points: Number(row.points ?? 0),
++    })) ?? [];
++
++  return NextResponse.json({ ok: true, poolId, rows });
++}
